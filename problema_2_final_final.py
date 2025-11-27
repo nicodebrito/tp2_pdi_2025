@@ -144,9 +144,9 @@ for nro_patente in nro_patentes:
        
         enderezada1=enderezada[40:140,:]
 
-        patentes.append([nro_patente,enderezada1,resultado])
+        patentes.append([nro_patente,enderezada1,resultado,img_rgb])
 
-        plt.imshow(enderezada1),plt.title('Vehiculo: '+str(nro_patente)), plt.show()
+        plt.imshow(resultado),plt.title('Vehiculo: '+str(nro_patente)), plt.show()
 
 
 for p in patentes:
@@ -166,8 +166,9 @@ for p in patentes:
 p = patentes[5]
 patentes.pop()
 
+final = []
 for p in patentes:
-    #plt.imshow(p[1]),plt.title('Vehiculo: '+str(p[0])), plt.show()
+    #plt.imshow(p[3]),plt.title('Vehiculo: '+str(p[0])), plt.show()
     patente = p[1]
     
     #v_blur = cv2.medianBlur(patente,7)
@@ -242,6 +243,7 @@ for p in patentes:
     print('max_area: ',max_area)
     print('***************************')
     elementos = []
+    
     for i in range(1, n):  # 0 es fondo
         x = stats[i, cv2.CC_STAT_LEFT]
         y = stats[i, cv2.CC_STAT_TOP]
@@ -251,6 +253,11 @@ for p in patentes:
         area = w * h
         ratio = h / float(w)
         
+        #Coordenadas centroide
+        cx = int(x + w/2)
+        cy = int(y + h/2)
+        print('Componentes centroide: ',cx ,';',cy)
+        
         print('------------------------')
         print('Componente: ',str(i))
         print('Ratio: ',ratio)
@@ -258,30 +265,77 @@ for p in patentes:
         print('Alto: ',h)
         print('Area: ',area)
         
-        if ratio < 1.0 or ratio > 4.0:continue
-        if not (min_w <= w <= max_w): continue
-        if not (min_h <= h <= max_h): continue
-        if not (min_area <= area <= max_area): continue
-        if (h <= w): continue
-        if (h > H*(2/3)): continue
-    
-        elementos.append(stats[i])
-        if len(elementos) <= 6:
-            a=cv2.rectangle(img_out, (x, y), (x+w, y+h), (0, 255, 0), 1)
+        #color = (255, 0, 0)
+        #a=cv2.rectangle(img_out, (x, y), (x+w, y+h), color, 1)
+        #b=cv2.putText(img_out, str(i), (cx, cy), 
+        #        cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
+
+        if ratio < 1.0 or ratio > 4.0:
+            restriccion = 'Ratio'
+            print('Se descarta por: ',restriccion)
+            continue
+        if not (min_w <= w <= max_w): 
+            restriccion = 'Ancho'
+            print('Se descarta por: ',restriccion)
+            continue
+        if not (min_h <= h <= max_h): 
+            restriccion = 'Alto'
+            print('Se descarta por: ',restriccion)
+            continue
+        if not (min_area <= area <= max_area): 
+            restriccion = 'Area'
+            print('Se descarta por: ',restriccion)
+            continue
+        if (h <= w): 
+            restriccion = 'h<=w'
+            print('Se descarta por: ',restriccion)
+            continue
+        if (h > H*(2/3)): 
+            restriccion = 'h > H*(2/3)'
+            print('Se descarta por: ',restriccion)
+            continue
+        
+        yaExiste = 0
+        for elemento in elementos:
+            cx2 = elemento[0]
+            #cy2 = elemento[1]
+            cw2 = elemento[2]
+            dist_x = np.abs(x - cx2)
+            if dist_x < (cw2/2 + w/2)*0.8:
+                yaExiste = 1
+                print('Distancia conflicto: ', dist_x,'. Es menor igual a ', str(0.8*cw2))
+                break
+
+        if yaExiste == 0 and len(elementos) <= 6:     
+            elementos.append(stats[i])
+            color = (0, 255, 0)
+            a=cv2.rectangle(img_out, (x, y), (x+w, y+h), color, 1)
+            b=cv2.putText(img_out, str(i), (cx, cy), 
+                cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
             print('SE GRAFICA')
             print('------------------------')
-            
-    plt.figure(figsize=(10,5))
+        else:
+            restriccion = 'exceso de elementos detectados.'
+            print('Se descarta por: ',restriccion)
+    
+    #plt.imshow(p[3]),plt.title('Vehiculo: '+str(nro_patente)), plt.show()
+    #plt.imshow(img_out),plt.title('Vehiculo: '+str(nro_patente)), plt.show()
+    
+    final.append([p[0],p[3],img_out])      
+    
+    for f in final:
+        #f=final[10]
+        plt.figure(figsize=(10,5))
+        plt.title("Vehiculo " + f[0])
+        plt.subplot(1, 2, 1)
+        plt.imshow(f[1])
+        plt.axis('off')
 
-    plt.subplot(1, 2, 1)
-    plt.imshow(patente)
-    plt.axis('off')
+        plt.subplot(1, 2, 2)
+        plt.imshow(f[2])
+        plt.axis('off')
 
-    plt.subplot(1, 2, 2)
-    plt.imshow(img_out)
-    plt.axis('off')
-
-    plt.show()
+        plt.show()
 
 
     plt.imshow(img_out), plt.show()
