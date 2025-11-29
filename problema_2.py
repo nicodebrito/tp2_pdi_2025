@@ -4,6 +4,7 @@ import cv2
 
 
 def segmenta_patente(img):
+    print('Inicia proceso de deteccion y segmentacion de patente')
     img_rgb  = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     #plt.imshow(img_gray, cmap='gray'), plt.show()
@@ -42,7 +43,7 @@ def segmenta_patente(img):
         if aspect_ratio >= 2 and aspect_ratio < 3.5 and area > 200:
             # Imagen A: agregar el contorno REAL
             a=cv2.drawContours(img_contornos_horizontales, [cnt], -1, 255, thickness=cv2.FILLED)
-            print('Vehiculo: ',str(nro_patente), '- Ratio:', str(aspect_ratio),'Area: ', str(area) )
+            #print('Vehiculo: ',str(nro_patente), '- Ratio:', str(aspect_ratio),'Area: ', str(area) )
             # Imagen B: agregar el bounding box completo
             a=cv2.rectangle(img_bboxes_horizontales, (x, y), (x + w, y + h), 255, thickness=cv2.FILLED)
         
@@ -106,19 +107,16 @@ def segmenta_patente(img):
        
         enderezada1=enderezada[40:140,:]
 
+        print('Finaliza proceso de deteccion y segmentacion de patente')
         return enderezada1             
         #patentes.append([nro_patente,enderezada1,resultado,img_rgb])
 
 
 def identificar_caracteres(patente):
+    print('Inicia deteccion de componentes de patente')
     if patente is None:
         print('No se detecta patente') 
         return None 
-
-    #plt.imshow(p[3]),plt.title('Vehiculo: '+str(p[0])), plt.show()
-    #patente = p[1]
-    
-    #v_blur = cv2.medianBlur(patente,7)
 
     img_rgb = cv2.cvtColor(patente, cv2.COLOR_BGR2RGB)
     #plt.imshow(patente), plt.show()
@@ -144,53 +142,32 @@ def identificar_caracteres(patente):
     tophat = cv2.morphologyEx(res, cv2.MORPH_TOPHAT, kernel)
     #blackhat = cv2.morphologyEx(res, cv2.MORPH_BLACKHAT, kernel)
 
-    #enhanced = cv2.add(res, tophat)
-    #enhanced = cv2.subtract(enhanced, blackhat)
-
-    #plt.imshow(tophat, cmap= 'gray'), plt.show()
-
-    #img_blur = cv2.GaussianBlur(img_grey,(3,3),0)
-
-    #img_grey = cv2.equalizeHist(img_grey)
-
-    #img_umbralada = img_grey.copy()
-    #img_umbralada[img_umbralada<q1] = 0
-    #img_umbralada[(img_umbralada >= q1) & (img_umbralada <= q2)] = q2
-    #img_umbralada[img_umbralada>q3] = 255
-
     img_umbralada = cv2.threshold(tophat, 40, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)[1]
-    #th = cv2.adaptiveThreshold(
-    #    img_blur, 255,
-    #    cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-    #    cv2.THRESH_BINARY_INV,
-    #    41, 5
-    #)
-
-
     #plt.imshow(img_umbralada, cmap= 'gray'), plt.show()
 
     n, labels, stats, centroids = cv2.connectedComponentsWithStats(img_umbralada) 
     #output = img_rgb.copy()
     mask_final = np.zeros(labels.shape, dtype=np.uint8)
     img_out = patente.copy()
-    print('Patente: ',p[0])
+    
     H, W = img_umbralada.shape[:2]
     min_h = 0.20 * H
     max_h = 0.80 * H
     min_w = 0.05 * W
     max_w = 0.25 * W
-    min_area = 0.01 * W * H   # 1% del área total
-    max_area = 0.1 * W * H   # 20% del área total
-    print()
+    min_area = 0.01 * W * H     # 1% del area total
+    max_area = 0.1 * W * H      # 10% del area total
+    print('***************************')
+    print('Caracteristicas imagen de patente')
     print('min_h: ', min_h ) 
     print('max_h: ', max_h  )
     print('min_w: ', min_w  )
     print('max_w: ', max_w  )
     print('min_area: ',min_area)
     print('max_area: ',max_area)
-    print('***************************')
-    elementos = []
     
+    elementos = []
+    print('Inicia analisis de componentes detectadas')
     for i in range(1, n):  # 0 es fondo
         x = stats[i, cv2.CC_STAT_LEFT]
         y = stats[i, cv2.CC_STAT_TOP]
@@ -203,7 +180,6 @@ def identificar_caracteres(patente):
         #Coordenadas centroide
         cx = int(x + w/2)
         cy = int(y + h/2)
-        print('Componentes centroide: ',cx ,';',cy)
         
         print('------------------------')
         print('Componente: ',str(i))
@@ -211,11 +187,7 @@ def identificar_caracteres(patente):
         print('Ancho: ',w)
         print('Alto: ',h)
         print('Area: ',area)
-        
-        #color = (255, 0, 0)
-        #a=cv2.rectangle(img_out, (x, y), (x+w, y+h), color, 1)
-        #b=cv2.putText(img_out, str(i), (cx, cy), 
-        #        cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
+        print('Ubicacion centroide: ',cx ,';',cy)
 
         if ratio < 1.0 or ratio > 4.0:
             restriccion = 'Ratio'
@@ -250,6 +222,7 @@ def identificar_caracteres(patente):
             dist_x = np.abs(x - cx2)
             if dist_x < (cw2/2 + w/2)*0.8:
                 yaExiste = 1
+                print('Elemento en conflicto')
                 print('Distancia conflicto: ', dist_x,'. Es menor igual a ', str(0.8*cw2))
                 break
 
@@ -259,62 +232,84 @@ def identificar_caracteres(patente):
             a=cv2.rectangle(img_out, (x, y), (x+w, y+h), color, 1)
             #b=cv2.putText(img_out, str(i), (cx, cy), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
             print('SE GRAFICA')
-            print('------------------------')
         else:
-            restriccion = 'exceso de elementos detectados.'
+            restriccion = 'exceso de elementos graficados.'
             print('Se descarta por: ',restriccion)
 
     #final.append([p[0],p[3],img_out])
     return img_out
 
+def visualizar_resultados(resultados):
+    
+    placeholder = np.full((100, 400), 150, dtype=np.uint8)
+    #Los elementos de resultado son [id_img, img_rgb, patente, patente_segmentada]    
+    for nro_vehiculo, v, p, patente_segmentada in resultados:
+
+        plt.figure(figsize=(12,5))
+        plt.suptitle('Imagen: ' + str(nro_vehiculo))
+
+        # Vehiculo
+        plt.subplot(1, 3, 1)
+        img_v = v if v is not None else placeholder
+        plt.imshow(img_v, cmap='gray')
+        if v is None:
+            plt.text(0.5, 0.5, "Sin imagen", ha='center', va='center', fontsize=12,
+                     transform=plt.gca().transAxes)
+        plt.title("Vehículo")
+        plt.axis('off')
+
+        # Patente
+        plt.subplot(1, 3, 2)
+        img_p = p if p is not None else placeholder
+        plt.imshow(img_p, cmap='gray', vmin=0, vmax=255)
+        if p is None:
+            plt.text(0.5, 0.5, "Patente\nNO detectada", ha='center', va='center',
+                     fontsize=12, transform=plt.gca().transAxes)
+        plt.title("Patente")
+        plt.axis('off')
+
+        # Caracteres
+        plt.subplot(1, 3, 3)
+        img_ps = patente_segmentada if patente_segmentada is not None else placeholder
+        plt.imshow(img_ps, cmap='gray', vmin=0, vmax=255)
+        if patente_segmentada is None:
+            plt.text(0.5, 0.5, "Sin elementos", ha='center', va='center', fontsize=12,
+                     transform=plt.gca().transAxes)
+        plt.title("Caracteres detectados")
+        plt.axis('off')
+
+        plt.tight_layout()
+        plt.show()
 
 
 
-
-nro_patentes = ['01','02','03', '04','05','06','07','08','09','10','11','12']
+id_imagenes = ['01','02','03', '04','05','06','07','08','09','10','11','12']
 vehiculos = []
 patentes = []
+patentes_segmentadas = []
+resultados = []
 
-for nro_patente in nro_patentes:
-    path = 'imagenes\patentes\img'+ nro_patente +'.png'
+for id_img in id_imagenes:
+    
+    #Accedo a la imagen
+    path = 'imagenes\patentes\img'+ id_img +'.png'
     img  = cv2.imread(path)
     img_rgb  = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     vehiculos.append(img_rgb)
-    segmento = segmenta_patente(img)
-    patentes.append(segmento)
+    print('Vehiculo:',id_img)
+    
+    #Segmento patente
+    patente = segmenta_patente(img)
+    #plt.imshow(patente), plt.show()
+    patentes.append(patente)
 
-patentes_segmentadas = []
-for patente in patentes:
+    #Identifico caracteres
     patente_segmentada = identificar_caracteres(patente)
+    #plt.imshow(patente_segmentada), plt.show()
     patentes_segmentadas.append(patente_segmentada)
+    
+    #Guardo los resultados para visualizar en conjunto
+    resultados.append([id_img,img_rgb,patente,patente_segmentada])
 
 
-
-for p,v,nro_vehiculo in zip(patentes,vehiculos,nro_patentes):
-    plt.figure(figsize=(10,5))
-
-    plt.suptitle('Vehiculo:'+ nro_vehiculo)
-
-    plt.subplot(1, 2, 1)
-    plt.imshow(v, cmap='gray')
-    plt.axis('off')
-
-    plt.subplot(1, 2, 2)
-    plt.imshow(p, cmap='gray')
-    plt.axis('off')
-
-    plt.show()
-
-
-for p in patentes_segmentadas:
-    plt.figure(figsize=(10,5))
-
-    plt.subplot(1, 2, 1)
-    plt.imshow(p, cmap='gray')
-    plt.axis('off')
-
-    plt.subplot(1, 2, 2)
-    plt.imshow(p, cmap='gray')
-    plt.axis('off')
-
-    plt.show()
+visualizar_resultados(resultados)
