@@ -63,7 +63,8 @@ for nro_patente in nro_patentes:
         img_out = img_out.astype(np.uint8)
 
         closing = img_out
-     
+
+
     #plt.imshow(img_out, cmap='gray'), plt.show()
 
     #resultado = cv2.bitwise_and(img_rgb, img_rgb, mask=img_out)
@@ -115,7 +116,7 @@ for nro_patente in nro_patentes:
             if len(approx) == 4:
                 break
         if len(approx) != 4:
-            patentes.append([nro_patente,None])
+            patentes.append([nro_patente,None,None,None])
             break
 
         pts = approx.reshape(4, 2)
@@ -146,7 +147,7 @@ for nro_patente in nro_patentes:
 
         patentes.append([nro_patente,enderezada1,resultado,img_rgb])
 
-        plt.imshow(resultado),plt.title('Vehiculo: '+str(nro_patente)), plt.show()
+        #plt.imshow(resultado),plt.title('Vehiculo: '+str(nro_patente)), plt.show()
 
 
 for p in patentes:
@@ -168,6 +169,11 @@ patentes.pop()
 
 final = []
 for p in patentes:
+
+    if p[1] is None:
+        print('No se detecta patente') 
+        continue 
+
     #plt.imshow(p[3]),plt.title('Vehiculo: '+str(p[0])), plt.show()
     patente = p[1]
     

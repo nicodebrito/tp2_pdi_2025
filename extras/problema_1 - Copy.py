@@ -129,17 +129,21 @@ for m in monedas:
     if max_area_moneda*0.95 < m[4] <= max_area_moneda: #Si el area es igual al area maxima o, a lo sumo, un 95% de ella, es una moneda grande.
         monedas_50+=1
         color = (255, 255, 255)
+        texto = '50'
     
     elif max_area_moneda*0.8 < m[4] <= max_area_moneda*0.95: 
         monedas_1+=1
         color = (0, 255, 0)
+        texto = '1'
     
     elif m[4] <= max_area_moneda*0.8:
         monedas_10+=1
-        color = (255, 0, 0)   
+        color = (255, 0, 0) 
+        texto = '10'  
 
     cv2.rectangle(img_clasificada, (x, y), (x + w, y + h), color, 2)
-
+    b=cv2.putText(img_clasificada, texto, (x, y-20), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 2, color, 2)
 # Mostrar resultado
 plt.figure(figsize=(8, 8))
 plt.imshow(img_clasificada)
@@ -184,6 +188,12 @@ plt.imshow(img_rgb_dados)
 plt.axis("off")
 plt.title("Conteo de dados")
 plt.show()
+
+
+
+
+
+
 
 
 
