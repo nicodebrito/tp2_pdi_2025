@@ -175,7 +175,8 @@ def clasificar_monedas(img, monedas):
 def detectar_valores_dados(img, dados):
     img_bgr_dados  = img.copy()
     img_gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-
+    valores_dados = [] 
+    cantidad_dados = len(dados)
     for dado in dados:
         x = dado[0]
         y = dado[1]
@@ -193,12 +194,24 @@ def detectar_valores_dados(img, dados):
         if isinstance(circles, np.ndarray):
           n = len(circles[0])
 
+        valores_dados.append(n)
 
         texto = str(n)
         a=cv2.rectangle(img_bgr_dados, (x, y), (x + w, y + h), (255, 255, 255), 2)
         b=cv2.putText(img_bgr_dados, texto, (x, y-20), 
                         cv2.FONT_HERSHEY_SIMPLEX, 3, (255, 255, 255), 3)
-
+    
+    suma_total_dados = sum(valores_dados)
+    print('*****************************************************')
+    print('Conteo de dados')
+    print('*****************************************************')
+    print('Se contabiliza un total de',cantidad_dados,'dados.')
+    for n in range(cantidad_dados):
+        print(f'Valor dado {str(n+1)}: {valores_dados[n]}' )
+    print('*****************************************************')
+    print('Los dados suman un total de',str(suma_total_dados))
+    print('*****************************************************')
+    
     img_rgb_dados  = cv2.cvtColor(img_bgr_dados, cv2.COLOR_BGR2RGB)
     plt.figure(figsize=(8, 8))
     plt.imshow(img_rgb_dados)
